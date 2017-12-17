@@ -66,7 +66,7 @@ $(function() {
         data: 20
     }];
 
-    var plotObj = $.plot($("#flot-pie-chart"), data, {
+    var plotObj = $.plot($("#flot-pie-chart-p"), data, {
         series: {
             pie: {
                 show: true
@@ -1101,103 +1101,520 @@ $(function() {
 
 //Flot Moving Line Chart
 
+
+
+
+
+//Flot Moving Line Chart
+
+//Flot Moving Line Chart
+
+
+var punto = 0;
+var per = 0;
+var perN = 0;
+
 $(function() {
 
-    var container = $("#flot-line-chart-moving");
 
-    // Determine how many data points to keep based on the placeholder's initial size;
-    // this gives us a nice high-res plot while avoiding more than one point per pixel.
+    
+        var container = $("#flot-line-chart-moving");
+    
+        // Determine how many data points to keep based on the placeholder's initial size;
+        // this gives us a nice high-res plot while avoiding more than one point per pixel.
+    
+        var maximum = container.outerWidth() / 2 || 300;
+    
+        //
+    
+        var data = [];
 
-    var maximum = container.outerWidth() / 2 || 300;
 
-    //
+        var updateGraphs = function() {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                //aqui las acciones cuando reciba respuesta en this.responseText
+                var jsonArr = JSON.parse(this.responseText); 
+                punto = jsonArr[0]["CPU"];                
+            }
+            };
+            xhttp.open("GET", "/graph", true);
+            xhttp.send();
+        }    
 
-    var data = [];
-
-    function getRandomData() {
-
-        if (data.length) {
-            data = data.slice(1);
+    
+        function getRandomData() {
+            updateGraphs();
+    
+            if (data.length) {
+                data = data.slice(1);
+            }
+    
+            while (data.length < maximum) {
+                var y = punto * 100;
+                console.log('var y ' + y);
+                data.push(y);
+            }
+    
+            // zip the generated y values with the x values
+    
+            var res = [];
+            for (var i = 0; i < data.length; ++i) {
+                res.push([i, data[i]])
+            }
+    
+            return res;
         }
+    
+        //
+    
+        series = [{
+            data: getRandomData(),
+            lines: {
+                fill: true
+            }
+        }];
+    
+        //
+    
+        var plot = $.plot(container, series, {
+            grid: {
+                borderWidth: 1,
+                minBorderMargin: 20,
+                labelMargin: 10,
+                backgroundColor: {
+                    colors: ["#fff", "#e4f4f4"]
+                },
+                margin: {
+                    top: 8,
+                    bottom: 20,
+                    left: 20
+                },
+                markings: function(axes) {
+                    var markings = [];
+                    var xaxis = axes.xaxis;
+                    for (var x = Math.floor(xaxis.min); x < xaxis.max; x += xaxis.tickSize * 2) {
+                        markings.push({
+                            xaxis: {
+                                from: x,
+                                to: x + xaxis.tickSize
+                            },
+                            color: "rgba(232, 232, 255, 0.2)"
+                        });
+                    }
+                    return markings;
+                }
+            },
+            xaxis: {
+                tickFormatter: function() {
+                    return "";
+                }
+            },
+            yaxis: {
+                min: 0,
+                max: 110
+            },
+            legend: {
+                show: true
+            }
+        });
+    
+        // Update the random dataset at 25FPS for a smoothly-animating chart
+    
+        setInterval(function updateRandom() {
+            series[0].data = getRandomData();
+            plot.setData(series);
+            plot.draw();
 
-        while (data.length < maximum) {
-            var previous = data.length ? data[data.length - 1] : 50;
-            var y = previous + Math.random() * 10 - 5;
-            data.push(y < 0 ? 0 : y > 100 ? 100 : y);
-        }
+              
+    per = punto * 100;
+    perN = 100 - per;
+    
+    
 
-        // zip the generated y values with the x values
-
-        var res = [];
-        for (var i = 0; i < data.length; ++i) {
-            res.push([i, data[i]])
-        }
-
-        return res;
-    }
-
-    //
-
-    series = [{
-        data: getRandomData(),
-        lines: {
-            fill: true
-        }
+    var data2 = [{
+        label: "Porcentaje CPU Utilizado: " + per,
+        data: per
+    }, {
+        label: "Porcentaje CPU NO Utilizado: " + perN,
+        data: perN
     }];
 
-    //
-
-    var plot = $.plot(container, series, {
+    var plotObj = $.plot($("#flot-pie-chart"), data2, {
+        series: {
+            pie: {
+                show: true
+            }
+        },
         grid: {
-            borderWidth: 1,
-            minBorderMargin: 20,
-            labelMargin: 10,
-            backgroundColor: {
-                colors: ["#fff", "#e4f4f4"]
+            hoverable: true
+        },
+        tooltip: true,
+        tooltipOpts: {
+            content: "%p.0%, %s", // show percentages, rounding to 2 decimal places
+            shifts: {
+                x: 20,
+                y: 0
             },
-            margin: {
-                top: 8,
-                bottom: 20,
-                left: 20
-            },
-            markings: function(axes) {
-                var markings = [];
-                var xaxis = axes.xaxis;
-                for (var x = Math.floor(xaxis.min); x < xaxis.max; x += xaxis.tickSize * 2) {
-                    markings.push({
-                        xaxis: {
-                            from: x,
-                            to: x + xaxis.tickSize
-                        },
-                        color: "rgba(232, 232, 255, 0.2)"
-                    });
-                }
-                return markings;
-            }
-        },
-        xaxis: {
-            tickFormatter: function() {
-                return "";
-            }
-        },
-        yaxis: {
-            min: 0,
-            max: 110
-        },
-        legend: {
-            show: true
+            defaultTheme: false
         }
     });
+        }, 1000);
+    
+    });
 
-    // Update the random dataset at 25FPS for a smoothly-animating chart
+    
+    var punto2 = 0;
+    
+    $(function() {
+        
+            var container = $("#flot-line-chart-moving2");
+        
+            // Determine how many data points to keep based on the placeholder's initial size;
+            // this gives us a nice high-res plot while avoiding more than one point per pixel.
+        
+            var maximum = container.outerWidth() / 2 || 300;
+        
+            //
+        
+            var data = [];
+    
+    
+            var updateGraphs = function() {
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    //aqui las acciones cuando reciba respuesta en this.responseText
+                    var jsonArr = JSON.parse(this.responseText); 
+                    punto2 = jsonArr[0]["total_memoria"];                
+                }
+                };
+                xhttp.open("GET", "/graph", true);
+                xhttp.send();
+            }    
+    
+        
+            function getRandomData() {
+                updateGraphs();
+        
+                if (data.length) {
+                    data = data.slice(1);
+                }
+        
+                while (data.length < maximum) {
+                    var y = punto2;
+                    console.log('var y ' + y);
+                    data.push(y );
+                }
+        
+                // zip the generated y values with the x values
+        
+                var res = [];
+                for (var i = 0; i < data.length; ++i) {
+                    res.push([i, data[i]])
+                }
+        
+                return res;
+            }
+        
+            //
+        
+            series = [{
+                data: getRandomData(),
+                lines: {
+                    fill: true
+                }
+            }];
+        
+            //
+        
+            var plot = $.plot(container, series, {
+                grid: {
+                    borderWidth: 1,
+                    minBorderMargin: 20,
+                    labelMargin: 10,
+                    backgroundColor: {
+                        colors: ["#fff", "#e4f4f4"]
+                    },
+                    margin: {
+                        top: 8,
+                        bottom: 20,
+                        left: 20
+                    },
+                    markings: function(axes) {
+                        var markings = [];
+                        var xaxis = axes.xaxis;
+                        for (var x = Math.floor(xaxis.min); x < xaxis.max; x += xaxis.tickSize * 2) {
+                            markings.push({
+                                xaxis: {
+                                    from: x,
+                                    to: x + xaxis.tickSize
+                                },
+                                color: "rgba(232, 232, 255, 0.2)"
+                            });
+                        }
+                        return markings;
+                    }
+                },
+                xaxis: {
+                    tickFormatter: function() {
+                        return "";
+                    }
+                },
+                yaxis: {
+                    min: 0,
+                    max: 10000
+                },
+                legend: {
+                    show: true
+                }
+            });
+        
+            // Update the random dataset at 25FPS for a smoothly-animating chart
+        
+            setInterval(function updateRandom() {
+                series[0].data = getRandomData();
+                plot.setData(series);
+                plot.draw();
+            }, 100);
+        
+        });
+//Flot Bar Chart
 
-    setInterval(function updateRandom() {
-        series[0].data = getRandomData();
-        plot.setData(series);
-        plot.draw();
-    }, 40);
+var punto3 = 0;
 
-});
+$(function() {
+    
+        var container = $("#flot-line-chart-moving3");
+    
+        // Determine how many data points to keep based on the placeholder's initial size;
+        // this gives us a nice high-res plot while avoiding more than one point per pixel.
+    
+        var maximum = container.outerWidth() / 2 || 300;
+    
+        //
+    
+        var data = [];
+
+
+        var updateGraphs = function() {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                //aqui las acciones cuando reciba respuesta en this.responseText
+                var jsonArr = JSON.parse(this.responseText); 
+                punto3 = jsonArr[0]["memoria_usada"];                
+            }
+            };
+            xhttp.open("GET", "/graph", true);
+            xhttp.send();
+        }    
+
+    
+        function getRandomData() {
+            updateGraphs();
+    
+            if (data.length) {
+                data = data.slice(1);
+            }
+    
+            while (data.length < maximum) {
+                var y = punto3;
+                console.log('var y ' + y);
+                data.push(y );
+            }
+    
+            // zip the generated y values with the x values
+    
+            var res = [];
+            for (var i = 0; i < data.length; ++i) {
+                res.push([i, data[i]])
+            }
+    
+            return res;
+        }
+    
+        //
+    
+        series = [{
+            data: getRandomData(),
+            lines: {
+                fill: true
+            }
+        }];
+    
+        //
+    
+        var plot = $.plot(container, series, {
+            grid: {
+                borderWidth: 1,
+                minBorderMargin: 20,
+                labelMargin: 10,
+                backgroundColor: {
+                    colors: ["#fff", "#e4f4f4"]
+                },
+                margin: {
+                    top: 8,
+                    bottom: 20,
+                    left: 20
+                },
+                markings: function(axes) {
+                    var markings = [];
+                    var xaxis = axes.xaxis;
+                    for (var x = Math.floor(xaxis.min); x < xaxis.max; x += xaxis.tickSize * 2) {
+                        markings.push({
+                            xaxis: {
+                                from: x,
+                                to: x + xaxis.tickSize
+                            },
+                            color: "rgba(232, 232, 255, 0.2)"
+                        });
+                    }
+                    return markings;
+                }
+            },
+            xaxis: {
+                tickFormatter: function() {
+                    return "";
+                }
+            },
+            yaxis: {
+                min: 0,
+                max: 10000
+            },
+            legend: {
+                show: true
+            }
+        });
+    
+        // Update the random dataset at 25FPS for a smoothly-animating chart
+    
+        setInterval(function updateRandom() {
+            series[0].data = getRandomData();
+            plot.setData(series);
+            plot.draw();
+        }, 100);
+    
+    });
+//Flot Bar Chart
+
+var punto4 = 0;
+
+$(function() {
+    
+        var container = $("#flot-line-chart-moving4");
+    
+        // Determine how many data points to keep based on the placeholder's initial size;
+        // this gives us a nice high-res plot while avoiding more than one point per pixel.
+    
+        var maximum = container.outerWidth() / 2 || 300;
+    
+        //
+    
+        var data = [];
+
+
+        var updateGraphs = function() {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                //aqui las acciones cuando reciba respuesta en this.responseText
+                var jsonArr = JSON.parse(this.responseText); 
+                punto4 = jsonArr[0]["porcentaje_memoria_libre"];                
+            }
+            };
+            xhttp.open("GET", "/graph", true);
+            xhttp.send();
+        }    
+
+    
+        function getRandomData() {
+            updateGraphs();
+    
+            if (data.length) {
+                data = data.slice(1);
+            }
+    
+            while (data.length < maximum) {
+                var y = punto4;
+                console.log('var y ' + y);
+                data.push(y );
+            }
+    
+            // zip the generated y values with the x values
+    
+            var res = [];
+            for (var i = 0; i < data.length; ++i) {
+                res.push([i, data[i]])
+            }
+    
+            return res;
+        }
+    
+        //
+    
+        series = [{
+            data: getRandomData(),
+            lines: {
+                fill: true
+            }
+        }];
+    
+        //
+    
+        var plot = $.plot(container, series, {
+            grid: {
+                borderWidth: 1,
+                minBorderMargin: 20,
+                labelMargin: 10,
+                backgroundColor: {
+                    colors: ["#fff", "#e4f4f4"]
+                },
+                margin: {
+                    top: 8,
+                    bottom: 20,
+                    left: 20
+                },
+                markings: function(axes) {
+                    var markings = [];
+                    var xaxis = axes.xaxis;
+                    for (var x = Math.floor(xaxis.min); x < xaxis.max; x += xaxis.tickSize * 2) {
+                        markings.push({
+                            xaxis: {
+                                from: x,
+                                to: x + xaxis.tickSize
+                            },
+                            color: "rgba(232, 232, 255, 0.2)"
+                        });
+                    }
+                    return markings;
+                }
+            },
+            xaxis: {
+                tickFormatter: function() {
+                    return "";
+                }
+            },
+            yaxis: {
+                min: 0,
+                max: 100
+            },
+            legend: {
+                show: true
+            }
+        });
+    
+        // Update the random dataset at 25FPS for a smoothly-animating chart
+    
+        setInterval(function updateRandom() {
+            series[0].data = getRandomData();
+            plot.setData(series);
+            plot.draw();
+        }, 100);
+    
+    });
+//Flot Bar Chart
 
 //Flot Bar Chart
 
